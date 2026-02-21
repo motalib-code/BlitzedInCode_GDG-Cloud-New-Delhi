@@ -1,0 +1,39 @@
+# ============================================================================
+# BRD Agent - Python Dependencies (Fast Version)
+# ============================================================================
+
+# --- Core Framework ---
+Flask
+flask-cors
+flask-jwt-extended
+
+# --- Frontend ---
+streamlit
+
+# --- Database ---
+SQLAlchemy
+
+# --- LLM Providers ---
+google-generativeai
+openai
+groq
+langchain
+langchain-google-genai
+
+# --- NLP & Text Processing ---
+textblob
+scikit-learn
+
+# --- Data Processing ---
+pandas
+datasets
+
+# --- Visualization ---
+networkx
+plotly
+matplotlib
+
+# --- Utilities ---
+python-dotenv
+requests
+pydantic
