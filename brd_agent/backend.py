@@ -575,7 +575,7 @@ Return ONLY a JSON object:
         result["raw_llm_output"] = response
         
         # Generate a simple fallback mermaid diagram if none provided
-        if not result.get("mermaid_code"):
+        if not result.get("mermaid_code") or not result.get("mermaid_code").strip():
             result["mermaid_code"] = """flowchart TD
     A[Project Start] --> B[Requirements Gathering]
     B --> C[Stakeholder Analysis]
@@ -670,11 +670,20 @@ Return ONLY a JSON object:
             matches = re.findall(pattern, text, re.IGNORECASE | re.MULTILINE)
             result["feedback"].extend([m.strip() for m in matches])
 
-        # Deduplicate all lists
-        result["requirements"] = list(set(result["requirements"]))
-        result["decisions"] = list(set(result["decisions"]))
-        result["action_items"] = list(set(result["action_items"]))
-        result["feedback"] = list(set(result["feedback"]))
+        # Deduplicate all lists (only string items)
+        for key in ["requirements", "decisions", "action_items", "feedback"]:
+            if key in result and isinstance(result[key], list):
+                # Filter only string items for deduplication
+                string_items = [item for item in result[key] if isinstance(item, str)]
+                result[key] = list(set(string_items))
+        
+        # Add fallback mermaid diagram for regex extraction
+        result["mermaid_code"] = """flowchart TD
+    A[Input Analysis] --> B[Pattern Matching]
+    B --> C[Entity Extraction]
+    C --> D[Requirements Identified]
+    D --> E[Timeline Detection]
+    E --> F[BRD Output]"""
 
         return result
 
@@ -953,6 +962,11 @@ Return ONLY valid JSON in the same format as above."""
             if result.get("project_topic") and not merged["project_topic"]:
                 merged["project_topic"] = result["project_topic"]
 
+            # Handle mermaid code - use the first non-empty one
+            if not merged.get("mermaid_code") or not merged["mermaid_code"].strip():
+                merged["mermaid_code"] = result.get("mermaid_code", "")
+            
+            # Handle other fields
             for key in ["requirements", "decisions", "feedback", "action_items"]:
                 items = result.get(key, [])
                 if isinstance(items, list):
@@ -973,7 +987,23 @@ Return ONLY valid JSON in the same format as above."""
         # Deduplicate
         for key in ["requirements", "decisions", "feedback", "action_items"]:
             if key in merged and isinstance(merged[key], list):
-                merged[key] = list(set(merged[key]))
+                # Handle string deduplication
+                string_items = []
+                for item in merged[key]:
+                    if isinstance(item, str):
+                        string_items.append(item)
+                    elif isinstance(item, dict) and "text" in item:
+                        string_items.append(item["text"])
+                merged[key] = list(set(string_items))
+
+        # Final fallback for mermaid code
+        if not merged.get("mermaid_code") or not merged["mermaid_code"].strip():
+            merged["mermaid_code"] = """flowchart TD
+    A[Project Analysis] --> B[Requirements Extraction]
+    B --> C[Stakeholder Identification]
+    C --> D[Decision Documentation]
+    D --> E[BRD Generation]
+    E --> F[Final Output]"""
 
         return merged
 
