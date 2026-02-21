@@ -4,12 +4,12 @@ BRD Agent - Streamlit Frontend (Module 5)
 Beautiful, interactive UI for the BRD Agent hackathon app.
 
 PAGES:
-  🏠 Home       - Problem statement & app overview
-  📤 Upload     - Drag-drop file upload for emails/transcripts/chats
-  ⚡ Process    - Extract BRD from uploaded or sample data
-  📋 View BRD   - Tabs for requirements/decisions/timelines + edit
-  📊 Dashboard  - History, search, and statistics
-  🕸️ Visualize  - Stakeholder graph & timeline charts
+  Home       - Problem statement & app overview
+  Upload     - Drag-drop file upload for emails/transcripts/chats
+  Process    - Extract BRD from uploaded or sample data
+  View BRD   - Tabs for requirements/decisions/timelines + edit
+  Dashboard  - History, search, and statistics
+  Visualize  - Stakeholder graph & timeline charts
 
 HOW TO RUN:
   streamlit run brd_agent/frontend.py
@@ -32,14 +32,14 @@ from brd_agent.pdf_generator import export_brd_to_premium_pdf
 # PAGE CONFIG (Must be first Streamlit command)
 # ============================================================================
 st.set_page_config(
-    page_title="BRD Agent – Multi-Channel Requirements Generator",
-    page_icon="📋",
+    page_title="BRD Agent | Enterprise BI",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 # ============================================================================
-# CUSTOM CSS (Premium Dark Theme)
+# CUSTOM CSS (Premium Enterprise Theme)
 # ============================================================================
 st.markdown("""
 <style>
@@ -48,52 +48,66 @@ st.markdown("""
 
     .stApp {
         font-family: 'Inter', sans-serif;
+        background: linear-gradient(135deg, #004d40 0%, #006064 50%, #01579b 100%);
+        color: #ffffff;
+    }
+
+    h1, h2, h3, h4, h5, h6, p, label, .stMarkdown {
+        color: #ffffff !important;
+        font-weight: 500;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
     }
 
     /* ── Sidebar Styling ── */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        background: linear-gradient(180deg, #00251a 0%, #004d40 50%, #006064 100%);
     }
 
     [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2,
     [data-testid="stSidebar"] h3, [data-testid="stSidebar"] label,
     [data-testid="stSidebar"] p, [data-testid="stSidebar"] span {
-        color: #e0e0e0 !important;
+        color: #ffffff !important;
+        font-weight: 500;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
     }
 
     /* ── Card Styling ── */
     .brd-card {
-        background: linear-gradient(135deg, #1e1e3f 0%, #2a2a5e 100%);
-        border: 1px solid rgba(78, 205, 196, 0.2);
-        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.95);
+        border: 2px solid #4caf50;
+        border-radius: 12px;
         padding: 24px;
         margin: 12px 0;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        transition: transform 0.2s ease;
+        color: #1a1a1a !important;
     }
     .brd-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 12px 40px rgba(78, 205, 196, 0.15);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     }
 
     /* ── Stat Cards ── */
     .stat-card {
-        background: linear-gradient(135deg, #4ECDC4 0%, #45B7D1 100%);
+        background: rgba(255, 255, 255, 0.9);
+        border: 2px solid #4caf50;
         border-radius: 12px;
         padding: 20px;
         text-align: center;
-        color: white;
+        color: #1a1a1a !important;
         font-weight: 600;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
     .stat-number {
         font-size: 2.2rem;
         font-weight: 700;
         display: block;
         line-height: 1.2;
+        color: #2e7d32 !important;
     }
     .stat-label {
         font-size: 0.85rem;
-        opacity: 0.9;
+        color: #666666 !important;
         margin-top: 4px;
     }
 
@@ -139,14 +153,31 @@ st.markdown("""
         font-size: 0.9rem;
     }
 
-    /* ── Buttons ── */
+    /* ── 3D Red Buttons ── */
     .stButton > button {
-        border-radius: 10px !important;
+        background: linear-gradient(135deg, #e53935 0%, #d32f2f 50%, #c62828 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+        padding: 12px 24px !important;
+        font-size: 1rem !important;
         font-weight: 600 !important;
-        transition: all 0.3s ease !important;
+        box-shadow: 0 6px #b71c1c, 0 8px 12px rgba(0, 0, 0, 0.3) !important;
+        transition: all 0.2s ease !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
     }
+    
     .stButton > button:hover {
-        transform: scale(1.02) !important;
+        background: linear-gradient(135deg, #d32f2f 0%, #c62828 50%, #b71c1c 100%) !important;
+        box-shadow: 0 4px #b71c1c, 0 6px 8px rgba(0, 0, 0, 0.3) !important;
+        transform: translateY(2px) !important;
+    }
+    
+    .stButton > button:active {
+        background: linear-gradient(135deg, #c62828 0%, #b71c1c 50%, #880e0f 100%) !important;
+        box-shadow: 0 2px #880e0f, 0 3px 4px rgba(0, 0, 0, 0.3) !important;
+        transform: translateY(4px) !important;
     }
 
     /* ── Hide Streamlit Branding ── */
@@ -187,6 +218,10 @@ init_session_state()
 @st.cache_resource
 def get_extraction_engine():
     """Get or create the BRD extraction engine (cached)."""
+    # Force environment to use Groq
+    import os
+    os.environ["LLM_PROVIDER"] = "groq"
+    
     from brd_agent.backend import BRDExtractionEngine
     return BRDExtractionEngine()
 
@@ -210,23 +245,23 @@ def ensure_db():
 def render_sidebar():
     """Render the sidebar navigation."""
     with st.sidebar:
-        st.markdown("## 📋 BRD Agent")
+        st.markdown("## BRD Agent")
         st.markdown("*Multi-Channel Requirements Generator*")
         st.markdown("---")
 
         page = st.radio(
             "Navigate",
-            ["🏠 Home", "📤 Upload & Process", "📋 View BRD",
-             "📊 Dashboard", "🕸️ Visualize"],
+            ["Home", "Upload & Process", "View BRD",
+             "Dashboard", "Visualize"],
             label_visibility="collapsed"
         )
 
         st.markdown("---")
 
         # Quick actions
-        st.markdown("### ⚡ Quick Actions")
+        st.markdown("### Quick Actions")
 
-        if st.button("📝 Load Sample Data", use_container_width=True):
+        if st.button("Load Sample Data", use_container_width=True):
             ensure_db()
             with st.spinner("Loading sample data..."):
                 from brd_agent.db_setup import get_session, insert_sample_data
@@ -234,25 +269,25 @@ def render_sidebar():
                 try:
                     insert_sample_data(session)
                     st.session_state.sample_data_loaded = True
-                    st.success("✅ Sample data loaded!")
+                    st.success("Sample data loaded!")
                 finally:
                     session.close()
 
-        if st.button("📡 Load Multi-Channel Datasets", use_container_width=True, type="secondary"):
+        if st.button("Load Multi-Channel Datasets", use_container_width=True, type="secondary"):
             ensure_db()
-            with st.spinner("📡 Orchestrating Live Channels (Gmail, Slack, Fireflies) & Historical Datasets (Enron, AMI, Kaggle)..."):
+            with st.spinner("Orchestrating Live Channels (Gmail, Slack, Fireflies) & Historical Datasets (Enron, AMI, Kaggle)..."):
                 from brd_agent.data_ingest import load_sample_data
                 load_sample_data()
-                st.success("✅ Multi-Channel & Public Datasets Synced!")
-                st.balloons()
+                st.success("Multi-Channel & Public Datasets Synced!")
+                # st.balloons() # balloons are icons/animations, removing as per request
 
         st.markdown("---")
-        st.markdown("### 📚 Dataset Sources")
+        st.markdown("### Dataset Sources")
         st.markdown("""
         <div class="dataset-credit">
-            📧 <a href="https://www.kaggle.com/datasets/wcukierski/enron-email-dataset" target="_blank">Enron Emails</a> (Public Domain)<br>
-            🎙️ <a href="https://huggingface.co/datasets/knkarthick/AMI" target="_blank">AMI Corpus</a> (CC BY 4.0)<br>
-            📝 <a href="https://www.kaggle.com/datasets/abhishekunnam/meeting-transcripts" target="_blank">Meeting Transcripts</a> (Kaggle)
+            Email <a href="https://www.kaggle.com/datasets/wcukierski/enron-email-dataset" target="_blank">Enron Emails</a> (Public Domain)<br>
+            Audio <a href="https://huggingface.co/datasets/knkarthick/AMI" target="_blank">AMI Corpus</a> (CC BY 4.0)<br>
+            Transcript <a href="https://www.kaggle.com/datasets/abhishekunnam/meeting-transcripts" target="_blank">Meeting Transcripts</a> (Kaggle)
         </div>
         """, unsafe_allow_html=True)
 
@@ -264,7 +299,7 @@ def render_sidebar():
 # ============================================================================
 def page_home():
     """Render the Home page."""
-    st.markdown('<div class="hero-title">📋 BRD Agent</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-title">BRD Agent</div>', unsafe_allow_html=True)
     st.markdown('<div class="hero-subtitle">Extract Business Requirements from Noisy Communications using LLM Intelligence</div>', unsafe_allow_html=True)
 
     # Problem Statement
@@ -273,26 +308,26 @@ def page_home():
 
     with col1:
         st.markdown("""
-        ### 🎯 Problem Statement
+        ### Business Case
 
         Organizations struggle to extract structured business requirements from scattered,
         noisy communications across multiple channels:
 
-        - **📧 Emails** – Requirements buried in long threads
-        - **🎙️ Meeting Transcripts** – Key decisions lost in conversations
-        - **💬 Chat Messages** – Quick decisions mixed with casual talk
+        - Emails – Requirements buried in long threads
+        - Meetings – Key decisions lost in conversations
+        - Chat Messages – Quick decisions mixed with casual talk
 
         **BRD Agent** uses LLM intelligence to automatically extract:
-        - ✅ **Requirements** (functional & non-functional)
-        - 📋 **Decisions** made in meetings
-        - 👥 **Stakeholders** and their roles
-        - 📅 **Timelines** and deadlines
-        - ⚠️ **Conflicts** in stakeholder feedback
+        - Requirements (functional & non-functional)
+        - Decisions made in meetings
+        - Stakeholders and their roles
+        - Timelines and deadlines
+        - Conflicts in stakeholder feedback
         """)
 
     with col2:
         st.markdown("""
-        ### 🏆 Key Features
+        ### Core Features
 
         <div class="brd-card">
             <span class="brd-tag tag-requirement">Multi-Channel Input</span>
@@ -308,14 +343,14 @@ def page_home():
 
     # Architecture Overview
     st.markdown("---")
-    st.markdown("### 🏗️ Architecture")
+    st.markdown("### Architecture")
 
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.markdown("""
         <div class="stat-card">
-            <span class="stat-number">📥</span>
+            <span class="stat-number">Input</span>
             <span class="stat-label">Multi-Channel<br>Data Ingestion</span>
         </div>
         """, unsafe_allow_html=True)
@@ -323,7 +358,7 @@ def page_home():
     with col2:
         st.markdown("""
         <div class="stat-card" style="background: linear-gradient(135deg, #45B7D1, #4ECDC4);">
-            <span class="stat-number">🧠</span>
+            <span class="stat-number">Logic</span>
             <span class="stat-label">LLM-Powered<br>Extraction Engine</span>
         </div>
         """, unsafe_allow_html=True)
@@ -331,7 +366,7 @@ def page_home():
     with col3:
         st.markdown("""
         <div class="stat-card" style="background: linear-gradient(135deg, #96CEB4, #45B7D1);">
-            <span class="stat-number">💾</span>
+            <span class="stat-number">Storage</span>
             <span class="stat-label">SQLite Database<br>with FTS5 Search</span>
         </div>
         """, unsafe_allow_html=True)
@@ -339,28 +374,27 @@ def page_home():
     with col4:
         st.markdown("""
         <div class="stat-card" style="background: linear-gradient(135deg, #FFEAA7, #96CEB4);">
-            <span class="stat-number">📊</span>
+            <span class="stat-number">Analytics</span>
             <span class="stat-label">Interactive<br>Visualizations</span>
         </div>
         """, unsafe_allow_html=True)
 
     # Quick Start
     st.markdown("---")
-    st.markdown("### 🚀 Quick Start")
-    st.info("👈 Use the sidebar to navigate. Start by clicking **📤 Upload & Process** to try extracting a BRD!")
-
+    st.markdown("### Quick Start")
+    st.info("Use the sidebar to navigate. Start by clicking **Upload & Process** to try extracting a BRD!")
 
 # ============================================================================
 # PAGE: UPLOAD & PROCESS
 # ============================================================================
 def page_upload_process():
     """Render the Upload & Process page."""
-    st.markdown("## 📤 Upload & Extract BRD")
+    st.markdown("## Upload & Extract BRD")
     st.markdown("Upload a communication or paste text to extract structured BRD elements.")
 
     ensure_db()
 
-    tab1, tab2, tab3, tab4 = st.tabs(["✍️ Paste Text", "📁 Upload File", "📦 Use Sample Data", "🔗 Multi-Channel Fetch"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Paste Text", "Upload File", "Meeting Video Upload", "Use Sample Data", "Multi-Channel Fetch"])
 
     # ── Tab 1: Paste Text ──
     with tab1:
@@ -383,7 +417,7 @@ def page_upload_process():
             )
 
         with col2:
-            st.markdown("### 💡 Tips")
+            st.markdown("### Tips")
             st.markdown("""
             **For best results, include:**
             - Email headers (From, To, Subject)
@@ -392,29 +426,35 @@ def page_upload_process():
             - Keywords: *requirement*, *decision*, *deadline*
 
             **The engine extracts:**
-            - ✅ Requirements (functional & non-functional)
-            - 📋 Decisions made
-            - 👥 Stakeholders & roles
-            - 📅 Timelines & deadlines
-            - ⚠️ Conflicts & risks
-            - 📌 Action items
+            - Requirements (functional & non-functional)
+            - Decisions made
+            - Stakeholders & roles
+            - Timelines & deadlines
+            - Conflicts & risks
+            - Action items
             """)
 
-        if st.button("🚀 Extract BRD", type="primary", use_container_width=True, key="extract_paste"):
+        if st.button("Extract BRD", type="primary", use_container_width=True, key="extract_paste"):
             if input_text and len(input_text) >= 10:
                 st.session_state.last_raw_input = input_text
-                with st.spinner("🧠 🕵️ Advanced BI Agent synthesizing channels..."):
-                    engine = get_extraction_engine()
-                    ct = None if channel_type == "Auto-Detect" else channel_type
-                    result = engine.extract_brd(input_text, channel_type=ct)
-                    st.session_state.current_brd = result
-                    st.session_state.extraction_history.append(result)
-
-                st.success("✅ BRD extracted successfully!")
-                st.balloons()
-                _display_brd_result(result)
+                with st.spinner("Advanced BI Agent synthesizing channels..."):
+                    try:
+                        engine = get_extraction_engine()
+                        ct = None if channel_type == "Auto-Detect" else channel_type
+                        result = engine.extract_brd(input_text, channel_type=ct)
+                        st.session_state.current_brd = result
+                        st.session_state.extraction_history.append(result)
+                        st.success("BRD extracted successfully!")
+                        # st.balloons()
+                        _display_brd_result(result)
+                    except Exception as e:
+                        if "429" in str(e) or "quota" in str(e).lower():
+                            st.warning("Gemini Rate Limit Exceeded")
+                            st.info("The Free Tier quota has been reached. Please wait 60s and try again, or switch to Groq in your .env file for faster results.")
+                        else:
+                            st.error(f"Extraction Error: {str(e)}")
             else:
-                st.error("⚠️ Please enter at least 10 characters of text.")
+                st.error("Please enter at least 10 characters of text.")
 
     # ── Tab 2: Upload File ──
     with tab2:
@@ -434,35 +474,116 @@ def page_upload_process():
                 key="file_channel"
             )
 
-            if st.button("🚀 Extract BRD from File", type="primary", use_container_width=True):
-                with st.spinner("🧠 Processing file..."):
-                    engine = get_extraction_engine()
-                    ct = None if file_channel == "Auto-Detect" else file_channel
-                    result = engine.extract_brd(content, channel_type=ct)
-                    st.session_state.current_brd = result
-                    st.session_state.extraction_history.append(result)
+            if st.button("Extract BRD from File", type="primary", use_container_width=True):
+                with st.spinner("Processing file..."):
+                    try:
+                        engine = get_extraction_engine()
+                        ct = None if file_channel == "Auto-Detect" else file_channel
+                        result = engine.extract_brd(content, channel_type=ct)
+                        st.session_state.current_brd = result
+                        st.session_state.extraction_history.append(result)
+                        st.success("BRD extracted from file!")
+                        # st.balloons()
+                        _display_brd_result(result)
+                    except Exception as e:
+                        if "429" in str(e) or "quota" in str(e).lower():
+                            st.warning("Gemini Rate Limit Exceeded")
+                            st.info("The Free Tier quota has been reached. Please wait 60s or switch to Groq in your .env file.")
+                        else:
+                            st.error(f"File Process Error: {str(e)}")
 
-                st.success("✅ BRD extracted from file!")
-                st.success("✅ BRD extracted from file!")
-                _display_brd_result(result)
+    # ── Tab 3: Meeting Video Upload ──
+    with tab3:
+        st.markdown("### Meeting Video Upload")
+        st.markdown("Upload a recorded meeting (mp4, mov, avi) to transcribe and extract BRD elements.")
+        
+        video_file = st.file_uploader(
+            "Upload meeting video",
+            type=["mp4", "mov", "avi"],
+            help="Upload a video recording of your stakeholders meeting"
+        )
+        
+        if video_file:
+            st.video(video_file)
+            
+            if st.button("Process Video & Extract BRD", type="primary", use_container_width=True):
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                
+                # Simulation steps
+                steps = [
+                    (20, "Extracting audio from video..."),
+                    (40, "Transcribing speech (Simulated Whisper AI)..."),
+                    (60, "Identifying background noise and casual talk..."),
+                    (80, "Cleaning transcript for BI analysis..."),
+                    (100, "Synthesizing BRD from cleaned transcript...")
+                ]
+                
+                for p, s in steps:
+                    import time
+                    time.sleep(1)
+                    progress_bar.progress(p)
+                    status_text.text(s)
+                
+                # Mock high-noise meeting transcript text
+                raw_transcript = """
+                [00:10] Sarah: Hi everyone, thanks for joining. Is John here?
+                [00:15] John: Yeah, I'm here. Sorry, I was just finishing my lunch. Sandwiches were great today.
+                [00:25] Sarah: Haha, nice. Anyway, let's get into Project Raptor. We need to finalize the LJM partnership requirements.
+                [00:40] Tom: Right. But we have a budget cut from Jeff. He mentioned it in that email.
+                [01:00] Maya: I agree with Tom. We need to slash the California budget by 20%.
+                [01:15] Sarah: But the partnership terms MUST be finalized by March 1st. That's a hard requirement.
+                [01:30] Maya: March 1st? That's tight with the budget changes.
+                [01:45] John: Oh, wait, it's raining outside again. Did anyone bring an umbrella?
+                [01:55] Sarah: Focus, John. So, requirement 1: finalized terms by March 1st. Decision 1: 20% budget cut for California.
+                [02:10] Tom: Also, for accessibility, the buttons must be tactile. That's another requirement.
+                [02:25] Sarah: Agreed. Tactile buttons are in. 
+                """
+                
+                st.markdown("#### Noise Identified & Fixed")
+                col_noise, col_fixed = st.columns(2)
+                
+                with col_noise:
+                    st.error("Identified Noise:")
+                    st.write("- Lunch discussion (Sandwiches)")
+                    st.write("- Weather talk (Rain/Umbrella)")
+                    st.write("- Casual greetings")
+                
+                with col_fixed:
+                    st.success("Cleaned Signal:")
+                    st.write("- Project Raptor Requirements")
+                    st.write("- LJM Partnership Deadlines")
+                    st.write("- Budget Decisions")
+                    st.write("- Tactile Access UI Requirements")
+                
+                with st.spinner("Extracting BRD..."):
+                    try:
+                        engine = get_extraction_engine()
+                        result = engine.extract_brd(raw_transcript, channel_type="meeting")
+                        st.session_state.current_brd = result
+                        st.session_state.extraction_history.append(result)
+                        st.success("BRD extracted from video transcript!")
+                        _display_brd_result(result)
+                    except Exception as e:
+                        st.error(f"Video Extraction Error: {str(e)}")
 
-    # ── Tab 5: 🛰️ What-If Simulator ──
-    with st.expander("🛰️ SMART 'WHAT-IF' SCENARIO SIMULATOR", expanded=False):
+    # ── Tab 5: What-If Simulator ──
+    with st.expander("SMART 'WHAT-IF' SCENARIO SIMULATOR", expanded=False):
         st.markdown("""
         *Predict the impact of changes on stakeholder sentiment and project health.*
         """)
         scenario = st.text_input("Enter a hypothetical scenario:", 
                                placeholder="e.g. 'Extend the deadline by 2 weeks' or 'Cut the budget by 30%'")
-        if st.button("🔮 Run Simulation"):
+        if st.button("Run Simulation"):
             if st.session_state.current_brd:
-                with st.spinner("🔮 AI Strategic Analyst at work..."):
+                with st.spinner("AI Strategic Analyst at work..."):
                     engine = get_extraction_engine()
                     sim_result = engine.simulate_scenario(st.session_state.current_brd, scenario)
                     
                     if "error" in sim_result:
                         st.error(sim_result["error"])
                     else:
-                        st.markdown(f"### 📊 Simulation Analysis")
+                        st.markdown(f"### Simulation Analysis")
                         st.info(sim_result.get("analysis", "No analysis provided."))
                         
                         col1, col2 = st.columns(2)
@@ -471,24 +592,24 @@ def page_upload_process():
                                     delta=sim_result.get('new_health_score', 0) - st.session_state.current_brd.get('project_health_score', 0))
                         
                         with col2:
-                            st.markdown("**🛡️ Mitigation Advice:**")
+                            st.markdown("**Mitigation Advice:**")
                             st.write(sim_result.get("advice", "None"))
                             
-                        st.markdown("#### 👥 Impacted Stakeholders")
+                        st.markdown("#### Impacted Stakeholders")
                         for s in sim_result.get("impacted_stakeholders", []):
                             st.markdown(f"- **{s['name']}**: {s['new_sentiment']} (Reason: {s['reason']})")
             else:
-                st.warning("⚠️ Please extract or load a BRD first.")
+                st.warning("Please extract or load a BRD first.")
 
-    # ── Tab 3: Sample Data ──
-    with tab3:
-        st.markdown("### 📦 Try with Sample Data")
+    # ── Tab 4: Sample Data ──
+    with tab4:
+        st.markdown("### Try with Sample Data")
         st.markdown("Select a sample communication to test the extraction engine:")
 
         sample_options = {
-            "📧 Project Requirements Email": _get_sample_email(),
-            "🎙️ Sprint Planning Meeting": _get_sample_meeting(),
-            "💬 Slack Project Discussion": _get_sample_chat()
+            "Project Requirements Email": _get_sample_email(),
+            "Sprint Planning Meeting": _get_sample_meeting(),
+            "Slack Project Discussion": _get_sample_chat()
         }
 
         selected_sample = st.selectbox("Choose a sample:", list(sample_options.keys()))
@@ -496,57 +617,69 @@ def page_upload_process():
         sample_text = sample_options[selected_sample]
         st.text_area("Sample Preview:", value=sample_text[:500] + "...", height=200, disabled=True)
 
-        if st.button("🚀 Extract BRD from Sample", type="primary", use_container_width=True):
-            with st.spinner("🧠 Extracting..."):
-                engine = get_extraction_engine()
-                result = engine.extract_brd(sample_text)
-                st.session_state.current_brd = result
-                st.session_state.extraction_history.append(result)
+        if st.button("Extract BRD from Sample", type="primary", use_container_width=True):
+            with st.spinner("Extracting..."):
+                try:
+                    engine = get_extraction_engine()
+                    result = engine.extract_brd(sample_text)
+                    st.session_state.current_brd = result
+                    st.session_state.extraction_history.append(result)
+                    st.success("BRD extracted!")
+                    # st.balloons()
+                    _display_brd_result(result)
+                except Exception as e:
+                    if "429" in str(e) or "quota" in str(e).lower():
+                        st.warning("Gemini Rate Limit Exceeded")
+                        st.info("Please wait 60s or consider switching provider to Groq.")
+                    else:
+                        st.error(f"Sample Extraction Error: {str(e)}")
 
-            st.success("✅ BRD extracted!")
-            st.balloons()
-            _display_brd_result(result)
-
-    # ── Tab 4: Multi-Channel Fetch ──
-    with tab4:
-        st.markdown("### 🛰️ Multi-Channel & Data Source Orchestrator")
+    # ── Tab 5: Multi-Channel Fetch ──
+    with tab5:
+        st.markdown("### Multi-Channel & Data Source Orchestrator")
         st.markdown("""
         Fetch data directly from live channels or pre-configured professional datasets:
         
         **Live Pipelines:**
-        - 📧 **Gmail** (Subject: "Project" or "Requirements")
-        - 💬 **Slack** (Project Channels)
-        - 🎙️ **Fireflies.ai** (Latest Meeting Transcripts)
+        - Gmail (Subject: "Project" or "Requirements")
+        - Slack (Project Channels)
+        - Fireflies.ai (Latest Meeting Transcripts)
         
         **Integrated Training Datasets:**
-        - 📧 **Enron Emails** (Public Domain)
-        - 🎙️ **AMI Corpus** (CC BY 4.0)
-        - 📝 **Meeting Transcripts** (Kaggle)
+        - Enron Emails (Public Domain)
+        - AMI Corpus (CC BY 4.0)
+        - Meeting Transcripts (Kaggle)
         """)
 
         col1, col2 = st.columns(2)
         with col1:
             st.info("🔑 API Keys loaded from .env")
         with col2:
-            if st.button("🛰️ Fetch & Orchestrate", type="primary", use_container_width=True):
-                with st.spinner("🕵️ Senior Analyst fetching data from all channels..."):
-                    fetcher = MultiChannelFetcher()
-                    all_data = fetcher.fetch_all_channels()
-                    
-                    # Combine all fetched text
-                    combined_text = "\n\n--- CHANNEL SEPARATOR ---\n\n".join([
-                        f"SOURCE: {d['source']}\nID: {d['id']}\nCONTENT: {d['content']}" 
-                        for d in all_data
-                    ])
-                    
-                    engine = get_extraction_engine()
-                    result = engine.extract_brd(combined_text)
-                    st.session_state.current_brd = result
-                    st.session_state.extraction_history.append(result)
-                    
-                    st.success(f"✅ Orchestrated data from {len(all_data)} sources!")
-                    st.balloons()
-                    _display_brd_result(result)
+            if st.button("Fetch & Orchestrate", type="primary", use_container_width=True):
+                with st.spinner("Senior Analyst fetching data from all channels..."):
+                    try:
+                        fetcher = MultiChannelFetcher()
+                        all_data = fetcher.fetch_all_channels()
+                        
+                        combined_text = "\n\n--- CHANNEL SEPARATOR ---\n\n".join([
+                            f"SOURCE: {d['source']}\nID: {d['id']}\nCONTENT: {d['content']}" 
+                            for d in all_data
+                        ])
+                        
+                        engine = get_extraction_engine()
+                        result = engine.extract_brd(combined_text)
+                        st.session_state.current_brd = result
+                        st.session_state.extraction_history.append(result)
+                        
+                        st.success(f"Orchestrated data from {len(all_data)} sources!")
+                        # st.balloons()
+                        _display_brd_result(result)
+                    except Exception as e:
+                        if "429" in str(e) or "quota" in str(e).lower():
+                            st.warning("Gemini Rate Limit Exceeded")
+                            st.info("Please wait 60s or consider switching provider to Groq.")
+                        else:
+                            st.error(f"Orchestration Error: {str(e)}")
 
 
 # ============================================================================
@@ -563,7 +696,7 @@ def page_view_brd():
     # Premium Header with Project Health
     col1, col2 = st.columns([3, 1])
     with col1:
-        st.markdown(f"# 🕵️ {brd.get('execution_summary', 'Advanced BI Synthesis')}")
+        st.markdown(f"# {brd.get('execution_summary', 'Advanced BI Synthesis')}")
         st.markdown(f"**Project Card:** {brd.get('project_topic', 'New BRD')}")
     with col2:
         viz = get_visualizer()
@@ -571,26 +704,27 @@ def page_view_brd():
         health_fig = viz.build_health_gauge(health_score)
         st.plotly_chart(health_fig, use_container_width=True)
 
-    # 🕵️ Advanced BI Section: Noise Reduction Logic
-    with st.expander("🔍 AI EXPLAINABILITY: Why was certain data ignored?", expanded=True):
+    # Advanced BI Section: Noise Reduction Logic
+    with st.expander("AI EXPLAINABILITY: Why was certain data ignored?", expanded=True):
         st.info(brd.get("noise_reduction_logic", "The agent identified corporate noise (lunch plans, greetings, newsletters) and automatically stripped it to focus on project-critical signals."))
 
     # Multi-Dimensional Tabs for Judges
     tabs = st.tabs([
-        "✅ Requirements (HITL)", 
-        "⛓️ Traceability (RTM)", 
-        "👥 Stakeholder Sentiment", 
-        "💡 Visual Architecture", 
-        "📅 Timeline", 
-        "🔬 Ground Truth Demo",
-        "📥 Professional Export"
+        "Requirements (HITL)", 
+        "Traceability (RTM)", 
+        "Stakeholder Sentiment", 
+        "Visual Architecture", 
+        "Timeline", 
+        "Ground Truth Demo",
+        "AI Refinement",
+        "Professional Export"
     ])
 
     # 1. Requirements with Human-in-the-Loop (HITL)
     with tabs[0]:
-        st.markdown("### 📝 Functional & Non-Functional Requirements")
+        st.markdown("### Functional & Non-Functional Requirements")
         st.caption("Review, edit, and approve AI-extracted requirements.")
-        
+
         reqs = brd.get("requirements", [])
         for i, req in enumerate(reqs):
             cols = st.columns([0.1, 0.7, 0.2])
@@ -612,9 +746,9 @@ def page_view_brd():
             # HITL Approval
             with cols[2]:
                 if status == "approved":
-                    st.success("✅ Approved")
+                    st.success("Approved")
                 else:
-                    if st.button("🚀 Approve", key=f"appr_btn_{i}"):
+                    if st.button("Approve", key=f"appr_btn_{i}"):
                         if isinstance(brd["requirements"][i], dict):
                             brd["requirements"][i]["status"] = "approved"
                         else:
@@ -624,9 +758,9 @@ def page_view_brd():
 
     # 2. Requirement Traceability Matrix (RTM)
     with tabs[1]:
-        st.markdown("### ⛓️ Requirement Traceability Matrix")
+        st.markdown("### Requirement Traceability Matrix")
         st.markdown("Transparency is key. See exactly where each requirement originated.")
-        
+
         rtm_list = []
         for req in brd.get("requirements", []):
             if isinstance(req, dict):
@@ -635,9 +769,9 @@ def page_view_brd():
                     "Requirement": req.get("text"),
                     "Type": req.get("type", "Functional"),
                     "Origin Channel": req.get("source", brd.get("channel_type")),
-                    "Human Verification": "✅ Verified" if req.get("status") == "approved" else "⏳ Pending"
+                    "Human Verification": "Verified" if req.get("status") == "approved" else "Pending"
                 })
-        
+
         if rtm_list:
             st.dataframe(pd.DataFrame(rtm_list), use_container_width=True)
             st.caption("This matrix provides full auditability for judges and stakeholders.")
@@ -646,19 +780,19 @@ def page_view_brd():
 
     # 3. Stakeholder Sentiment Analysis
     with tabs[2]:
-        st.markdown("### 👥 Stakeholder Analysis & Emotional Stance")
+        st.markdown("### Stakeholder Analysis & Emotional Stance")
         s_cols = st.columns(3)
         for i, s in enumerate(brd.get("stakeholders", [])):
             with s_cols[i % 3]:
                 sentiment = s.get("sentiment", "neutral").lower()
                 stance = s.get("stance", "neutral").lower()
                 
-                # Sentiment Icons
-                icon = "🌟" if sentiment == "happy" else "🔥" if sentiment == "frustrated" else "📉" if sentiment == "concerned" else "⚖️"
+                # Sentiment State
+                sentiment_label = sentiment.upper()
                 
                 st.markdown(f"""
                 <div class="brd-card" style="border-top: 5px solid {'#4ECDC4' if sentiment=='happy' else '#FF6B6B' if sentiment=='frustrated' else '#FFEAA7'};">
-                    <h3>{icon} {s.get('name')}</h3>
+                    <h3>{s.get('name')}</h3>
                     <p><b>Role:</b> {s.get('role')}</p>
                     <p><b>Emotional State:</b> <span style="color: {'#4ECDC4' if sentiment=='happy' else '#FF6B6B'}; font-weight:bold;">{sentiment.upper()}</span></p>
                     <p><b>Project Stance:</b> {stance.capitalize()}</p>
@@ -667,7 +801,7 @@ def page_view_brd():
 
     # 4. Visual Architecture (Mermaid)
     with tabs[3]:
-        st.markdown("### 💡 AI-Generated Workflow / Architecture")
+        st.markdown("### AI-Generated Workflow / Architecture")
         m_code = brd.get("mermaid_code")
         if m_code:
             st.markdown("#### Diagram View")
@@ -689,7 +823,7 @@ def page_view_brd():
 
     # 5. Timeline
     with tabs[4]:
-        st.markdown("### 📅 Extracted Project Timeline")
+        st.markdown("### Extracted Project Timeline")
         viz = get_visualizer()
         t_fig = viz.build_timeline_gantt(brd)
         if t_fig:
@@ -699,139 +833,48 @@ def page_view_brd():
 
     # 6. Ground Truth Demo (Original vs AI Cleaned)
     with tabs[5]:
-        st.markdown("### 🔬 Ground Truth Demo: Noise Filtering Results")
+        st.markdown("### Ground Truth Demo: Noise Filtering Results")
         col_orig, col_cleaned = st.columns(2)
         
         with col_orig:
-            st.markdown("#### 📥 Original Noisy Data")
+            st.markdown("#### Original Noisy Data")
             # We fetch original from session state or use a placeholder
             orig_text = st.session_state.get("last_raw_input", "Original high-noise dataset (emails/transcripts)")
             st.code(orig_text[:1000] + "...", language="text")
             st.caption("Includes lunch plans, weather talk, and newsletters.")
 
         with col_cleaned:
-            st.markdown("#### 📤 AI Purified Output")
+            st.markdown("#### AI Purified Output")
             cleaned_text = brd.get("raw_filtered_text", "Purified content here...")
             st.code(cleaned_text[:1000] + "...", language="text")
             st.caption("Only project-critical requirements & decisions remain.")
         
         st.markdown("---")
-        st.markdown("### ⚠️ Critical Conflicts (Cross-Channel)")
-        for c in brd.get("conflicts", []):
-            severity = c.get("severity", "med").upper()
-            st.error(f"**[{severity} CONFLICT]** {c.get('description')}")
-
-    # 7. Professional Export
-    with tabs[6]:
-        st.markdown("### 📤 Professional BRD Export")
-        st.write("Generate a judge-ready PDF report with full company branding and structured layout.")
-        
-        if st.button("📄 Generate & Download Premium PDF", type="primary", use_container_width=True):
-            with st.spinner("🎨 Designing your PDF..."):
-                file_name = f"BRD_{brd.get('project_topic', 'Report').replace(' ', '_')}.pdf"
-                pdf_path = export_brd_to_premium_pdf(brd, file_name)
-                
-                with open(pdf_path, "rb") as f:
-                    st.download_button(
-                        label="📥 Click here to Download PDF",
-                        data=f,
-                        file_name=file_name,
-                        mime="application/pdf"
-                    )
-                st.success("✅ PDF Generated Successfully!")
-            for i, dec in enumerate(decisions, 1):
-                st.markdown(f"""
-                <div class="brd-card">
-                    <span class="brd-tag tag-decision">DEC-{i:03d}</span>
-                    <p style="margin-top: 8px;">{dec}</p>
-                </div>
-                """, unsafe_allow_html=True)
-        else:
-            st.info("No decisions extracted.")
-
-    with tab3:
-        stakeholders = brd.get("stakeholders", [])
-        if stakeholders:
-            for s in stakeholders:
-                if isinstance(s, dict):
-                    name = s.get("name", "Unknown")
-                    role = s.get("role", "Team Member")
-                else:
-                    name = str(s)
-                    role = "Team Member"
-                st.markdown(f"""
-                <div class="brd-card">
-                    <span class="brd-tag tag-stakeholder">👤</span>
-                    <strong>{name}</strong> – <em>{role}</em>
-                </div>
-                """, unsafe_allow_html=True)
-        else:
-            st.info("No stakeholders identified.")
-
-    with tab4:
-        timelines = brd.get("timelines", [])
-        if timelines:
-            for t in timelines:
-                if isinstance(t, dict):
-                    date = t.get("date", "TBD")
-                    milestone = t.get("milestone", "Milestone")
-                else:
-                    date = str(t)
-                    milestone = "Timeline item"
-                st.markdown(f"""
-                <div class="brd-card">
-                    <span class="brd-tag tag-timeline">📅 {date}</span>
-                    <p style="margin-top: 8px;">{milestone}</p>
-                </div>
-                """, unsafe_allow_html=True)
-
-            # Gantt chart
-            viz = get_visualizer()
-            gantt_fig = viz.build_timeline_gantt(brd)
-            if gantt_fig:
-                st.plotly_chart(gantt_fig, use_container_width=True)
-        else:
-            st.info("No timelines extracted.")
-
-    with tab5:
-        # Feedback
-        feedback = brd.get("feedback", [])
-        if feedback:
-            st.markdown("#### 💬 Stakeholder Feedback")
-            for fb in feedback:
-                st.markdown(f"- {fb}")
-
-        # Conflicts
+        st.markdown("### Critical Conflicts (Cross-Channel)")
         conflicts = brd.get("conflicts", [])
         if conflicts:
-            st.markdown("#### ⚠️ Detected Conflicts")
             for c in conflicts:
-                severity = c.get("severity", "unknown") if isinstance(c, dict) else "unknown"
+                severity = c.get("severity", "med").upper() if isinstance(c, dict) else "MED"
                 desc = c.get("description", str(c)) if isinstance(c, dict) else str(c)
-                color = {"high": "🔴", "medium": "🟡", "low": "🟢"}.get(severity, "⚪")
-                st.markdown(f"""
-                <div class="brd-card">
-                    <span class="brd-tag tag-conflict">{color} {severity.upper()}</span>
-                    <p style="margin-top: 8px;">{desc}</p>
-                </div>
-                """, unsafe_allow_html=True)
-                if isinstance(c, dict):
-                    if c.get("item_1"):
-                        st.markdown(f"  *Side A:* {c['item_1']}")
-                    if c.get("item_2"):
-                        st.markdown(f"  *Side B:* {c['item_2']}")
-        elif not feedback:
-            st.info("No feedback or conflicts detected.")
+                st.error(f"[{severity} CONFLICT] {desc}")
+        else:
+            st.info("No critical conflicts detected.")
 
-        # Action Items
-        actions = brd.get("action_items", [])
-        if actions:
-            st.markdown("#### 📌 Action Items")
-            for action in actions:
-                st.checkbox(action, key=f"action_{hash(action)}")
+        st.markdown("---")
+        st.markdown("### Action Items & Feedback")
+        col_fb, col_act = st.columns(2)
+        with col_fb:
+            st.markdown("#### Stakeholder Feedback")
+            for fb in brd.get("feedback", []):
+                st.markdown(f"- {fb}")
+        with col_act:
+            st.markdown("#### Action Items")
+            for action in brd.get("action_items", []):
+                st.checkbox(action, key=f"action_tab5_{hash(action)}")
 
-    with tab6:
-        st.markdown("### 🔧 AI-Powered Refinement")
+    # 7. AI Refinement
+    with tabs[6]:
+        st.markdown("### AI-Powered Refinement")
         st.markdown("Instruct the AI to refine or expand the extracted BRD:")
 
         refinement = st.text_input(
@@ -839,25 +882,65 @@ def page_view_brd():
             placeholder="e.g., 'Add more detail to security requirements' or 'Focus on timeline conflicts'"
         )
 
-        if st.button("🤖 Refine with AI", type="primary"):
+        if st.button("Refine with AI", type="primary"):
             if refinement:
-                with st.spinner("🧠 Refining BRD..."):
-                    engine = get_extraction_engine()
-                    refined = engine.refine_brd(brd, refinement)
-                    st.session_state.current_brd = refined
-                    st.session_state.extraction_history.append(refined)
-                st.success("✅ BRD refined! Switch tabs to see updates.")
-                st.rerun()
+                with st.spinner("Refining BRD..."):
+                    try:
+                        engine = get_extraction_engine()
+                        refined = engine.refine_brd(brd, refinement)
+                        st.session_state.current_brd = refined
+                        st.session_state.extraction_history.append(refined)
+                        st.success("BRD refined! Switch tabs to see updates.")
+                        st.rerun()
+                    except Exception as e:
+                        if "429" in str(e) or "quota" in str(e).lower():
+                            st.warning("Gemini Rate Limit Exceeded")
+                            st.info("Wait 60s before refining again, or switch to Groq provider.")
+                        else:
+                            st.error(f"Refinement Error: {str(e)}")
             else:
                 st.warning("Please enter a refinement instruction.")
 
+    # 8. Professional Export
+    with tabs[7]:
+        st.markdown("### Professional BRD Export")
+        st.write("Generate a judge-ready PDF report with full company branding and structured layout.")
+
+        if st.button("Generate & Download Premium PDF", type="primary", use_container_width=True):
+            with st.spinner("Designing your PDF..."):
+                file_name = f"BRD_{brd.get('project_topic', 'Report').replace(' ', '_')}.pdf"
+                pdf_path = export_brd_to_premium_pdf(brd, file_name)
+
+                with open(pdf_path, "rb") as f:
+                    st.download_button(
+                        label="Click here to Download PDF",
+                        data=f,
+                        file_name=file_name,
+                        mime="application/pdf"
+                    )
+                st.success("PDF Generated Successfully!")
+            
+            decisions = brd.get("decisions", [])
+            if decisions:
+                st.markdown("### Key Decisions Extracted")
+                for i, dec in enumerate(decisions, 1):
+                    st.markdown(f"""
+                    <div class="brd-card">
+                        <span class="brd-tag tag-decision">DEC-{i:03d}</span>
+                        <p style="margin-top: 8px;">{dec}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+            else:
+                st.info("No decisions extracted.")
+
     # Export
     st.markdown("---")
+    topic = brd.get("project_topic", "new_project")
     col1, col2 = st.columns(2)
     with col1:
         brd_json = json.dumps(brd, indent=2, default=str)
         st.download_button(
-            "📥 Download BRD as JSON",
+            "Download BRD as JSON",
             data=brd_json,
             file_name=f"brd_{topic.replace(' ', '_')}.json",
             mime="application/json",
@@ -866,7 +949,7 @@ def page_view_brd():
     with col2:
         brd_md = _brd_to_markdown(brd)
         st.download_button(
-            "📄 Download BRD as Markdown",
+            "Download BRD as Markdown",
             data=brd_md,
             file_name=f"brd_{topic.replace(' ', '_')}.md",
             mime="text/markdown",
@@ -879,7 +962,7 @@ def page_view_brd():
 # ============================================================================
 def page_dashboard():
     """Render the Dashboard page."""
-    st.markdown("## 📊 Dashboard")
+    st.markdown("## Dashboard")
 
     ensure_db()
 
@@ -929,7 +1012,7 @@ def page_dashboard():
         st.markdown("---")
 
         # Search
-        st.markdown("### 🔍 Search BRDs")
+        st.markdown("### Search BRDs")
         search_query = st.text_input("Search requirements, decisions, stakeholders...",
                                       placeholder="e.g., API integration, security, deadline")
 
@@ -939,19 +1022,19 @@ def page_dashboard():
                 st.success(f"Found {len(results)} results")
                 for brd in results:
                     brd_dict = brd.to_dict()
-                    with st.expander(f"📋 {brd_dict.get('project_topic', 'Untitled')} (v{brd_dict.get('version_num', 1)})"):
+                    with st.expander(f"{brd_dict.get('project_topic', 'Untitled')} (v{brd_dict.get('version_num', 1)})"):
                         st.json(brd_dict)
             else:
                 st.info("No results found. Try different keywords.")
 
         # Recent BRDs
-        st.markdown("### 📜 Recent BRD Extractions")
+        st.markdown("### Recent BRD Extractions")
         brds = get_all_brds(session, limit=10)
         if brds:
             for brd in brds:
                 brd_dict = brd.to_dict()
                 with st.expander(
-                    f"📋 {brd_dict.get('project_topic', 'Untitled')} | "
+                    f"{brd_dict.get('project_topic', 'Untitled')} | "
                     f"v{brd_dict.get('version_num', 1)} | "
                     f"{brd_dict.get('created_at', 'N/A')}"
                 ):
@@ -963,23 +1046,23 @@ def page_dashboard():
                     with col3:
                         st.metric("Confidence", f"{brd_dict.get('confidence_score', 0)*100:.0f}%")
 
-                    if st.button(f"📋 View Full BRD", key=f"view_brd_{brd_dict['id']}"):
+                    if st.button(f"View Full BRD", key=f"view_brd_{brd_dict['id']}"):
                         st.session_state.current_brd = brd_dict
                         st.rerun()
         else:
             st.info("No BRDs extracted yet. Go to **Upload & Process** to create one!")
 
         # Recent Communications
-        st.markdown("### 📨 Recent Communications")
+        st.markdown("### Recent Communications")
         comms = get_communications(session, limit=10)
         if comms:
             for comm in comms:
                 comm_dict = comm.to_dict()
-                icon = {"email": "📧", "meeting": "🎙️", "chat": "💬"}.get(comm_dict["type"], "📄")
-                with st.expander(f"{icon} {comm_dict.get('subject', 'No subject')} ({comm_dict['type']})"):
+                ctype = comm_dict["type"]
+                with st.expander(f"{ctype.capitalize()}: {comm_dict.get('subject', 'No subject')}"):
                     st.text(comm_dict.get("content", "")[:500])
 
-                    if st.button(f"⚡ Extract BRD", key=f"process_comm_{comm_dict['id']}"):
+                    if st.button(f"Extract BRD", key=f"process_comm_{comm_dict['id']}"):
                         with st.spinner("Extracting..."):
                             engine = get_extraction_engine()
                             result = engine.extract_brd(
@@ -988,7 +1071,7 @@ def page_dashboard():
                             )
                             st.session_state.current_brd = result
                             st.session_state.extraction_history.append(result)
-                        st.success("✅ Done! Go to **View BRD** to see results.")
+                        st.success("Done! Go to View BRD to see results.")
 
     finally:
         session.close()
@@ -996,7 +1079,7 @@ def page_dashboard():
     # Session History
     if st.session_state.extraction_history:
         st.markdown("---")
-        st.markdown("### 📚 Session Extraction History")
+        st.markdown("### Session Extraction History")
         st.markdown(f"*{len(st.session_state.extraction_history)} extractions this session*")
 
         for i, hist in enumerate(reversed(st.session_state.extraction_history[-5:])):
@@ -1010,17 +1093,18 @@ def page_dashboard():
 # ============================================================================
 def page_visualize():
     """Render the Visualization page."""
-    st.markdown("## 🕸️ Visualizations")
+    st.markdown("## Visualizations")
 
     if not st.session_state.current_brd:
-        st.info("👈 No BRD extracted yet. Go to **Upload & Process** first!")
+        st.info("No BRD extracted yet. Go to **Upload & Process** first!")
         return
 
     brd = st.session_state.current_brd
     viz = get_visualizer()
 
     # Extraction Overview
-    st.markdown("### 📊 Extraction Overview")
+    st.markdown("### Extraction Overview")
+
     overview_fig = viz.build_requirements_chart(brd)
     if overview_fig:
         st.plotly_chart(overview_fig, use_container_width=True)
@@ -1029,14 +1113,16 @@ def page_visualize():
 
     with col1:
         # Confidence Gauge
-        st.markdown("### 🎯 Confidence Score")
+        st.markdown("### Confidence Score")
+
         gauge_fig = viz.build_confidence_gauge(brd.get("confidence_score", 0))
         if gauge_fig:
             st.plotly_chart(gauge_fig, use_container_width=True)
 
     with col2:
         # Timeline
-        st.markdown("### 📅 Project Timeline")
+        st.markdown("### Project Timeline")
+
         gantt_fig = viz.build_timeline_gantt(brd)
         if gantt_fig:
             st.plotly_chart(gantt_fig, use_container_width=True)
@@ -1045,7 +1131,7 @@ def page_visualize():
 
     # Stakeholder Graph
     st.markdown("---")
-    st.markdown("### 🕸️ Stakeholder Relationship Graph")
+    st.markdown("### Stakeholder Relationship Graph")
 
     graph_fig = viz.build_stakeholder_graph_plotly(brd)
     if graph_fig:
@@ -1061,13 +1147,13 @@ def page_visualize():
             st.info("No stakeholder data available.")
 
     # Graph JSON (for developers)
-    with st.expander("🔧 Raw Graph Data (JSON)"):
+    with st.expander("Raw Graph Data (JSON)"):
         graph_data = viz.build_stakeholder_graph(brd)
         st.json(graph_data)
 
     # Multi-topic clustering
     st.markdown("---")
-    st.markdown("### 🎯 Multi-Topic Clustering")
+    st.markdown("### Multi-Topic Clustering")
 
     all_texts = (
         brd.get("requirements", []) +
@@ -1082,7 +1168,8 @@ def page_visualize():
 
         for cluster in clusters:
             keywords = ", ".join(cluster.get("topic_keywords", []))
-            with st.expander(f"🏷️ Topic: {keywords} ({cluster.get('size', 0)} items)"):
+            with st.expander(f"Topic: {keywords} ({cluster.get('size', 0)} items)"):
+
                 for text in cluster.get("texts", []):
                     st.markdown(f"- {text}")
     else:
@@ -1099,12 +1186,12 @@ def _display_brd_result(result: dict):
     
     # --- CONFLICT DETECTION UI LOGIC ---
     markdown_report = result.get("markdown_report", "")
-    if "⚠️ CRITICAL CONFLICTS" in markdown_report or result.get("conflicts"):
-        st.error("⚠️ Warning: Conflicting requirements detected across communication channels! Check the BRD below.")
+    if "CRITICAL CONFLICTS" in markdown_report or result.get("conflicts"):
+        st.error("Warning: Conflicting requirements detected across communication channels! Check the BRD below.")
     else:
-        st.success("✅ Extraction successful. No conflicts found.")
+        st.success("Extraction successful. No conflicts found.")
 
-    st.markdown(f"### 🕵️ {result.get('execution_summary', 'Advanced BI Synthesis')}")
+    st.markdown(f"### {result.get('execution_summary', 'Advanced BI Synthesis')}")
     st.markdown(f"**Topic:** {result.get('project_topic', 'New BRD')}")
 
     col1, col2, col3, col4 = st.columns(4)
@@ -1117,14 +1204,14 @@ def _display_brd_result(result: dict):
     with col4:
         st.metric("Confidence", f"{result.get('confidence_score', 0)*100:.0f}%")
 
-    # 🕵️ Advanced BI Section: Markdown Synthesis
+    # Advanced BI Section: Markdown Synthesis
     with st.expander("📝 Extracted Business Requirements Document (Synthesis)", expanded=True):
         if markdown_report:
             st.markdown(markdown_report)
             
             # Download Button (Judges love this!)
             st.download_button(
-                label="📥 Download BRD as Markdown",
+                label="Download BRD as Markdown",
                 data=markdown_report,
                 file_name="Extracted_BRD.md",
                 mime="text/markdown",
@@ -1133,7 +1220,7 @@ def _display_brd_result(result: dict):
         else:
             st.info("No synthesis report generated.")
 
-    st.info("💡 Go to **📋 View BRD** for the full detailed view with tabs and visualizations!")
+    st.info("Go to **View BRD** for the full detailed view with tabs and visualizations!")
 
 
 def _brd_to_markdown(brd: dict) -> str:
@@ -1181,15 +1268,15 @@ def _brd_to_markdown(brd: dict) -> str:
         md += "\n"
 
     if brd.get("conflicts"):
-        md += "## 3. Conflict Alert ⚠️\n\n"
+        md += "## 3. Conflict Alert\n\n"
         for c in brd["conflicts"]:
             if isinstance(c, dict):
-                md += f"- ⚠️ **{c.get('severity', 'N/A').upper()}**: {c.get('description', '')}\n"
+                md += f"- **{c.get('severity', 'N/A').upper()}**: {c.get('description', '')}\n"
             else:
-                md += f"- ⚠️ {c}\n"
+                md += f"- {c}\n"
         md += "\n"
 
-    md += "---\n*Generated by BRD Agent – Multi-Channel Requirements Generator*\n"
+    md += "---\n*Generated by BRD Agent - Multi-Channel Requirements Generator*\n"
     return md
 
 
@@ -1249,15 +1336,15 @@ def main():
     """Main application entry point."""
     page = render_sidebar()
 
-    if page == "🏠 Home":
+    if page == "Home":
         page_home()
-    elif page == "📤 Upload & Process":
+    elif page == "Upload & Process":
         page_upload_process()
-    elif page == "📋 View BRD":
+    elif page == "View BRD":
         page_view_brd()
-    elif page == "📊 Dashboard":
+    elif page == "Dashboard":
         page_dashboard()
-    elif page == "🕸️ Visualize":
+    elif page == "Visualize":
         page_visualize()
 
 

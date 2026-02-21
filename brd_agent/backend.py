@@ -28,8 +28,9 @@ HOW TO USE:
 
 import re
 import json
-import os
+import time
 from typing import List, Dict, Optional, Tuple
+from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
 
 from brd_agent.config import (
     LLM_PROVIDER, GEMINI_API_KEY, OPENAI_API_KEY, TOGETHER_API_KEY, GROQ_API_KEY,
@@ -61,8 +62,8 @@ class BRDExtractionEngine:
 
     def __init__(self):
         """Initialize the extraction engine with LLM client."""
-        self.llm_provider = LLM_PROVIDER
-        self.model_name = get_llm_model()
+        self.llm_provider = "groq"  # Force Groq provider
+        self.model_name = "llama-3.1-8b-instant"  # Force correct model
         self.ingestion = DataIngestionEngine()
         self._init_llm_client()
 
@@ -70,73 +71,53 @@ class BRDExtractionEngine:
         """Initialize the appropriate LLM client based on config."""
         self.llm_client = None
 
-        if self.llm_provider == "gemini" and GEMINI_API_KEY:
-            try:
-                import google.generativeai as genai
-                genai.configure(api_key=GEMINI_API_KEY)
-                self.llm_client = genai.GenerativeModel(self.model_name)
-                
-                # --- LangChain Integration ---
-                from langchain_google_genai import ChatGoogleGenerativeAI
-                from langchain_core.prompts import PromptTemplate
-                
-                self.lc_llm = ChatGoogleGenerativeAI(
-                    model="gemini-1.5-flash", 
-                    google_api_key=GEMINI_API_KEY
-                )
-                
-                self.lc_prompt = PromptTemplate(
-                    input_variables=["raw_data"],
-                    template="""
-                    You are an Advanced Multi-Channel BI Specialist. 
-                    Analyze the following noisy corporate data (Enron Emails / AMI Transcripts) and generate a BRD.
-                    
-                    RAW DATA:
-                    {raw_data}
-                    
-                    INSTRUCTIONS:
-                    1. Filter out all noise (lunch plans, greetings).
-                    2. Extract Functional Requirements with [Source Citations].
-                    3. DETECT CONFLICTS: If two sources give different deadlines or budgets, list them explicitly under a "### ⚠️ CRITICAL CONFLICTS" heading.
-                    
-                    Output ONLY in clean Markdown format.
-                    """
-                )
-                self.lc_chain = self.lc_prompt | self.lc_llm
-                print(f"🧠 LLM initialized: Gemini ({self.model_name}) + LangChain Pipeline")
-            except Exception as e:
-                print(f"⚠️ Gemini init error: {e}")
-
-        elif self.llm_provider == "openai" and OPENAI_API_KEY:
-            try:
-                from openai import OpenAI
-                self.llm_client = OpenAI(api_key=OPENAI_API_KEY)
-                print(f"🧠 LLM initialized: OpenAI ({self.model_name})")
-            except Exception as e:
-                print(f"⚠️ OpenAI init error: {e}")
-
-        elif self.llm_provider == "together" and TOGETHER_API_KEY:
-            try:
-                from openai import OpenAI
-                self.llm_client = OpenAI(
-                    api_key=TOGETHER_API_KEY,
-                    base_url="https://api.together.xyz/v1"
-                )
-                print(f"🧠 LLM initialized: Together ({self.model_name})")
-            except Exception as e:
-                print(f"⚠️ Together init error: {e}")
-
-        elif self.llm_provider == "groq" and GROQ_API_KEY:
+        # Only Groq is supported now
+        if self.llm_provider == "groq":
             try:
                 from groq import Groq
                 self.llm_client = Groq(api_key=GROQ_API_KEY)
-                print(f"🧠 LLM initialized: Groq ({self.model_name})")
+                
+                # --- LangChain Integration for Groq ---
+                try:
+                    from langchain_groq import ChatGroq
+                    from langchain_core.prompts import PromptTemplate
+                    
+                    self.lc_llm = ChatGroq(
+                        model_name="llama-3.1-8b-instant", 
+                        groq_api_key=GROQ_API_KEY,
+                        temperature=0
+                    )
+                    
+                    self.lc_prompt = PromptTemplate(
+                        input_variables=["raw_data"],
+                        template="""
+                        Act as a Senior Business Requirements Analyst. 
+                        Analyze the following multi-channel communication data and generate a structured BRD.
+
+                        INPUT DATA:
+                        {raw_data}
+
+                        STRICT GUIDELINES:
+                        1. NOISE FILTERING: Completely ignore greetings, casual talk, and non-project related info.
+                        2. STRUCTURE: Include Executive Summary, Business Objectives, Functional/Non-Functional Requirements, and Stakeholders.
+                        3. CONFLICT DETECTION: Identify and list any contradictions in deadlines, budget, or scope under a "CONFLICT ANALYSIS" section.
+                        4. CITATIONS: Use [Source: Channel Name] for every requirement.
+                        5. STYLE: Professional, corporate tone. NO EMOJIS.
+
+                        OUTPUT FORMAT: Markdown
+                        """
+                    )
+                    self.lc_chain = self.lc_prompt | self.lc_llm
+                except Exception as lc_e:
+                    print(f"Groq LangChain init error: {lc_e}. Synthesis might be disabled.")
+                
+                print(f"LLM initialized: Groq ({self.model_name})")
             except Exception as e:
-                print(f"⚠️ Groq init error: {e}")
+                print(f"Groq init error: {e}")
 
         if self.llm_client is None:
-            print("⚠️ No LLM client configured. Using rule-based extraction fallback.")
-            print("   Set GEMINI_API_KEY or OPENAI_API_KEY in your .env file.")
+            print("No LLM client configured. Using rule-based extraction fallback.")
+            print("   Set GROQ_API_KEY in your env.config file.")
 
     # ────────────────────────────────────────────────────────────────────
     # SECTION 1: CHANNEL CLASSIFICATION
@@ -159,7 +140,7 @@ class BRDExtractionEngine:
             text: Raw input text
 
         RETURNS:
-            One of: "email", "meeting", "chat"
+            One of: "email", "meeting", or "chat"
         """
         text_lower = text.lower()
 
@@ -292,11 +273,22 @@ class BRDExtractionEngine:
         if not hasattr(self, 'lc_chain'):
             return "LangChain pipeline not initialized properly. Check API keys."
         
-        try:
-            response = self.lc_chain.invoke({"raw_data": raw_data})
-            return response.content
-        except Exception as e:
-            return f"LangChain Error: {str(e)}"
+        max_retries = 3
+        base_delay = 5
+        
+        for attempt in range(max_retries):
+            try:
+                response = self.lc_chain.invoke({"raw_data": raw_data})
+                return response.content
+            except Exception as e:
+                if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                    if attempt < max_retries - 1:
+                        delay = base_delay * (2 ** attempt)
+                        print(f"   LangChain Rate Limit hit. Retrying in {delay}s...")
+                        time.sleep(delay)
+                        continue
+                return f"LangChain Error: {str(e)}"
+        return "LangChain synthesis failed after retries due to rate limits."
 
     def extract_brd(self, text: str, channel_type: Optional[str] = None) -> Dict:
         """
@@ -332,23 +324,23 @@ class BRDExtractionEngine:
               - confidence_score: 0.0-1.0 confidence
               - raw_filtered_text: Text after noise removal
         """
-        print("🔍 Starting BRD extraction...")
+        print("Starting BRD extraction...")
 
         # Step 1: Classify channel
         if not channel_type:
-            channel_type = self.classify_channel(input_text)
-        print(f"   📨 Channel type: {channel_type}")
+            channel_type = self.classify_channel(text)
+        print(f"   Channel type: {channel_type}")
 
         # Step 2: Filter noise
-        filtered_text, relevance_score = self.filter_noise_tfidf(input_text)
-        print(f"   🔇 Noise filtering: relevance={relevance_score:.2f}")
+        filtered_text, relevance_score = self.filter_noise_tfidf(text)
+        print(f"   Noise filtering: relevance={relevance_score:.2f}")
 
         # Step 3: Extract entities using regex (fast, no LLM needed)
         regex_entities = self.ingestion.extract_entities(filtered_text)
 
         # Step 4: Chunk text if needed
         chunks = self.ingestion.chunk_text(filtered_text)
-        print(f"   📄 Text chunks: {len(chunks)}")
+        print(f"   Text chunks: {len(chunks)}")
 
         # Step 5: Extract via LLM (or fallback to regex)
         if self.llm_client:
@@ -374,7 +366,7 @@ class BRDExtractionEngine:
         brd_result["raw_filtered_text"] = filtered_text
         brd_result["confidence_score"] = self._calculate_confidence(brd_result)
 
-        print(f"   ✅ Extraction complete! Confidence: {brd_result['confidence_score']:.2f}")
+        print(f"   Extraction complete! Confidence: {brd_result['confidence_score']:.2f}")
         return brd_result
 
     def _extract_via_llm(self, chunks: List[str], channel_type: str) -> Dict:
@@ -396,7 +388,7 @@ class BRDExtractionEngine:
                 parsed = self._parse_llm_response(raw_response)
                 all_results.append(parsed)
             except Exception as e:
-                print(f"   ⚠️ LLM extraction error on chunk {i+1}: {e}")
+                print(f"   LLM extraction error on chunk {i+1}: {e}")
                 continue
 
         # Merge results from all chunks
@@ -442,7 +434,7 @@ You are an Advanced Business Intelligence Agent specializing in High-Noise Data 
 ### OUTPUT REQUIREMENTS:
 - Use professional language and maintain realism grounded in the text.
 - Metadata: Tag citations with [Enron Corpus 2026] or [AMI Meeting Corpus] appropriately.
-- Mermaid Diagrams: Represent the architecture or sequence discussed.
+- Mermaid Diagrams: Generate a simple flowchart showing the project workflow or architecture discussed in the text.
 
 IMPORTANT: Return ONLY valid JSON in this exact format:
 {{
@@ -472,8 +464,8 @@ IMPORTANT: Return ONLY valid JSON in this exact format:
         }}
     ],
     "conflicts": [{{ "description": "Contradiction detail", "severity": "CRITICAL/high/med" }}],
-    "noise_reduction_logic": "string - Explain why certain data was ignored for transparency",
-    "mermaid_code": "string - flowchart or architecture",
+    "noise_reduction_logic": "string - Explain why certain portions of the data were ignored for transparency",
+    "mermaid_code": "string - Generate a simple mermaid flowchart. Example: 'flowchart TD\\n    A[Start] --> B[Requirement]\\n    B --> C[Decision]\\n    C --> D[Implementation]'",
     "project_health_score": 0-100
 }}
 
@@ -520,26 +512,10 @@ Return ONLY a JSON object:
     def _call_llm(self, prompt: str) -> str:
         """
         Call the configured LLM provider.
-
-        Supports Gemini, OpenAI, and Together AI (OpenAI-compatible).
+        
+        Only Groq is supported.
         """
-        if self.llm_provider == "gemini":
-            response = self.llm_client.generate_content(prompt)
-            return response.text
-
-        elif self.llm_provider in ("openai", "together"):
-            response = self.llm_client.chat.completions.create(
-                model=self.model_name,
-                messages=[
-                    {"role": "system", "content": "You are a BRD extraction expert. Always return valid JSON."},
-                    {"role": "user", "content": prompt}
-                ],
-                temperature=0.2,  # Low temperature for consistent extraction
-                max_tokens=2000
-            )
-            return response.choices[0].message.content
-
-        elif self.llm_provider == "groq":
+        if self.llm_provider == "groq":
             response = self.llm_client.chat.completions.create(
                 model=self.model_name,
                 messages=[
@@ -585,6 +561,10 @@ Return ONLY a JSON object:
                 result["timelines"] = parsed.get("timelines", [])
                 result["feedback"] = parsed.get("feedback", [])
                 result["action_items"] = parsed.get("action_items", [])
+                result["conflicts"] = parsed.get("conflicts", [])
+                result["noise_reduction_logic"] = parsed.get("noise_reduction_logic", "")
+                result["mermaid_code"] = parsed.get("mermaid_code", "")
+                result["project_health_score"] = parsed.get("project_health_score", 85)
 
                 return result
             except json.JSONDecodeError:
@@ -593,6 +573,16 @@ Return ONLY a JSON object:
         # Fallback: return raw response as-is
         result = self._empty_brd_result()
         result["raw_llm_output"] = response
+        
+        # Generate a simple fallback mermaid diagram if none provided
+        if not result.get("mermaid_code"):
+            result["mermaid_code"] = """flowchart TD
+    A[Project Start] --> B[Requirements Gathering]
+    B --> C[Stakeholder Analysis]
+    C --> D[Decision Making]
+    D --> E[Implementation]
+    E --> F[Project Completion]"""
+        
         return result
 
     def _extract_via_regex(self, text: str, entities: Dict) -> Dict:
@@ -602,7 +592,7 @@ Return ONLY a JSON object:
         This provides basic extraction without any API keys.
         Not as accurate as LLM but gives reasonable results.
         """
-        print("   📝 Using regex-based extraction (no LLM configured)")
+        print("   Using regex-based extraction (no LLM configured)")
 
         result = self._empty_brd_result()
 
@@ -714,7 +704,7 @@ Return ONLY a JSON object:
         try:
             from textblob import TextBlob
         except ImportError:
-            print("   ⚠️ TextBlob not installed. Skipping conflict detection.")
+            print("   TextBlob not installed. Skipping conflict detection.")
             return []
 
         conflicts = []
@@ -947,6 +937,9 @@ Return ONLY valid JSON in the same format as above."""
             "feedback": [],
             "action_items": [],
             "conflicts": [],
+            "noise_reduction_logic": "",
+            "mermaid_code": "",
+            "project_health_score": 85,
             "raw_llm_output": "",
             "confidence_score": 0.0,
             "noise_score": 0.0
@@ -979,7 +972,8 @@ Return ONLY valid JSON in the same format as above."""
 
         # Deduplicate
         for key in ["requirements", "decisions", "feedback", "action_items"]:
-            merged[key] = list(set(merged[key]))
+            if key in merged and isinstance(merged[key], list):
+                merged[key] = list(set(merged[key]))
 
         return merged
 

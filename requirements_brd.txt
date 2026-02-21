@@ -37,3 +37,4 @@ matplotlib
 python-dotenv
 requests
 pydantic
+fpdf2

@@ -13,6 +13,7 @@ from .config import get_config
 from .openai import OpenAIProvider
 from .gemini import GeminiProvider
 from .grok import GrokProvider
+from .groq import GroqProvider
 from .ollama import OllamaProvider
 
 
@@ -21,6 +22,7 @@ PROVIDER_REGISTRY: Dict[str, Type[BaseLLMProvider]] = {
     'openai': OpenAIProvider,
     'gemini': GeminiProvider,
     'grok': GrokProvider,
+    'groq': GroqProvider,
     'ollama': OllamaProvider,
 }
 

@@ -8,6 +8,7 @@ Available Providers:
     - openai: OpenAI API (GPT-3.5, GPT-4, etc.) - requires OPENAI_API_KEY
     - gemini: Google Gemini API - requires GEMINI_API_KEY
     - grok: Grok (xAI) API - requires GROK_API_KEY
+    - groq: Groq API (Llama 3, Mixtral, etc.) - requires GROQ_API_KEY
     - ollama: Ollama local models (no API key needed)
 
 Quick Start:
@@ -36,6 +37,7 @@ Configuration:
     - OPENAI_API_KEY=your_key_here
     - GEMINI_API_KEY=your_key_here
     - GROK_API_KEY=your_key_here
+    - GROQ_API_KEY=your_key_here
 
 For more information, see individual provider documentation.
 """
@@ -55,6 +57,7 @@ from .router import (
 from .openai import OpenAIProvider
 from .gemini import GeminiProvider
 from .grok import GrokProvider
+from .groq import GroqProvider
 from .ollama import OllamaProvider
 
 
@@ -76,6 +79,7 @@ __all__ = [
     'OpenAIProvider',
     'GeminiProvider',
     'GrokProvider',
+    'GroqProvider',
     'OllamaProvider',
     
     # Registry

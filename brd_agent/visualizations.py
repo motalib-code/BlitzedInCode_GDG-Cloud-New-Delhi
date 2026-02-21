@@ -4,11 +4,11 @@ BRD Agent - Visualizations Module (Module 6)
 Creates stunning visual representations of BRD data.
 
 FEATURES:
-  🕸️ Stakeholder Relationship Graph (NetworkX)
-  📈 Timeline Gantt Chart (Plotly)
-  📊 Requirements Priority Matrix (Plotly)
-  🔀 Conflict Heatmap
-  📉 Extraction Confidence Dashboard
+  - Stakeholder Relationship Graph (NetworkX)
+  - Timeline Gantt Chart (Plotly)
+  - Requirements Priority Matrix (Plotly)
+  - Conflict Heatmap
+  - Extraction Confidence Dashboard
 
 HOW TO USE:
   from brd_agent.visualizations import BRDVisualizer
@@ -201,7 +201,7 @@ class BRDVisualizer:
         fig = go.Figure(
             data=[edge_trace, node_trace],
             layout=go.Layout(
-                title=dict(text="🕸️ Stakeholder Relationship Graph", font=dict(size=16)),
+                title=dict(text="Stakeholder Relationship Graph", font=dict(size=16)),
                 showlegend=False,
                 hovermode='closest',
                 xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
@@ -264,7 +264,7 @@ class BRDVisualizer:
         ))
 
         fig.update_layout(
-            title=dict(text="📅 Project Timeline", font=dict(size=16)),
+            title=dict(text="Project Timeline", font=dict(size=16)),
             xaxis_title="Sequence",
             yaxis_title="Milestone",
             plot_bgcolor='rgba(0,0,0,0)',
@@ -315,7 +315,7 @@ class BRDVisualizer:
         ))
 
         fig.update_layout(
-            title=dict(text="📊 BRD Extraction Summary", font=dict(size=16)),
+            title=dict(text="BRD Extraction Summary", font=dict(size=16)),
             yaxis_title="Count",
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='rgba(0,0,0,0)',
@@ -369,7 +369,7 @@ class BRDVisualizer:
         fig = go.Figure(go.Indicator(
             mode="gauge+number",
             value=health_score,
-            title={'text': "Project Health 🛰️", 'font': {'size': 20, 'color': '#4ECDC4'}},
+            title={'text': "Project Health", 'font': {'size': 20, 'color': '#4ECDC4'}},
             gauge={
                 'axis': {'range': [0, 100]},
                 'bar': {'color': "white"},
@@ -427,7 +427,7 @@ class BRDVisualizer:
         ))
 
         fig.update_layout(
-            title=dict(text="📊 Communication Types Distribution", font=dict(size=16)),
+            title=dict(text="Communication Types Distribution", font=dict(size=16)),
             paper_bgcolor='rgba(0,0,0,0)',
             height=400,
             showlegend=True,

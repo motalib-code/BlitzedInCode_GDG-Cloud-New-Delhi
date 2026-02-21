@@ -18,6 +18,7 @@ class LLMConfig:
         'openai': 'OPENAI_API_KEY',
         'gemini': 'GEMINI_API_KEY',
         'grok': 'GROK_API_KEY',
+        'groq': 'GROQ_API_KEY',
     }
     
     def __init__(self, config_file: Optional[str] = None):

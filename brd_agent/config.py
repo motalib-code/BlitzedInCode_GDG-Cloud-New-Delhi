@@ -20,7 +20,7 @@ ENV_FILE = PROJECT_ROOT / ".env"
 load_dotenv(ENV_FILE)
 
 # ── LLM Configuration ──────────────────────────────────────────────────────
-LLM_PROVIDER = os.getenv("LLM_PROVIDER", "gemini")  # "gemini", "openai", "together", "local"
+LLM_PROVIDER = os.getenv("LLM_PROVIDER", "groq")  # "gemini", "openai", "together", "groq", "local"
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY", "")
@@ -37,7 +37,7 @@ DEFAULT_MODELS = {
     "gemini": "gemini-2.0-flash",
     "openai": "gpt-3.5-turbo",
     "together": "microsoft/Phi-3-mini-4k-instruct",
-    "groq": "llama3-70b-8192",
+    "groq": "llama-3.1-8b-instant",
     "local": "Phi-3-mini-4k-instruct",
 }
 
@@ -45,7 +45,7 @@ def get_llm_model():
     """Get the LLM model name based on provider and config."""
     if LLM_MODEL:
         return LLM_MODEL
-    return DEFAULT_MODELS.get(LLM_PROVIDER, "gemini-2.0-flash")
+    return DEFAULT_MODELS.get(LLM_PROVIDER, "llama-3.1-8b-instant")
 
 # ── Application Configuration ──────────────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "brd-agent-hackathon-secret-key")
