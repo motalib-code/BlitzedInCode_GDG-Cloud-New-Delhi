@@ -9,3 +9,4 @@ celery
 redis
 ffmpeg-python
 markdown
+fpdf2

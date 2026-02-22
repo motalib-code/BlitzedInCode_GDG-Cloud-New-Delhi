@@ -907,7 +907,7 @@ Return ONLY a JSON object:
             user_instruction: User's refinement instruction
 
         RETURNS:
-            Updated BRD dict
+            Updated BRD dict with 'refinement_reasoning' and 'change_summary'
         """
         if not self.llm_client:
             return current_brd
@@ -919,15 +919,24 @@ The user wants you to refine it with this instruction:
 "{user_instruction}"
 
 Please update the BRD accordingly and return the complete updated JSON.
-Return ONLY valid JSON in the same format as above."""
+IMPORTANT: In the returned JSON, also include these two EXTRA fields:
+  "refinement_reasoning": "A 2-3 sentence explanation of WHY these changes were made, referencing the user instruction.",
+  "change_summary": "A bullet-list summary of WHAT exactly was changed (e.g., 'Deadline updated from March 1 to March 20', 'Added new security requirement REQ-005')."
+
+Return ONLY valid JSON in the same format as above, with the two extra fields added."""
 
         try:
             raw_response = self._call_llm(prompt)
             refined = self._parse_llm_response(raw_response)
             if refined.get("requirements") or refined.get("decisions"):
+                # Ensure reasoning fields exist
+                if "refinement_reasoning" not in refined:
+                    refined["refinement_reasoning"] = f"Refined based on user instruction: {user_instruction}"
+                if "change_summary" not in refined:
+                    refined["change_summary"] = f"Changes applied per instruction: {user_instruction}"
                 return refined
         except Exception as e:
-            print(f"   ⚠️ Refinement error: {e}")
+            print(f"   Refinement error: {e}")
 
         return current_brd
 

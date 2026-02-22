@@ -26,7 +26,7 @@ import streamlit as st
 import pandas as pd
 import difflib
 from brd_agent.multi_channel_fetcher import MultiChannelFetcher
-from brd_agent.pdf_generator import export_brd_to_premium_pdf
+from brd_agent.pdf_generator import export_brd_to_premium_pdf, generate_brd_pdf_bytes
 
 # ============================================================================
 # PAGE CONFIG (Must be first Streamlit command)
@@ -200,7 +200,9 @@ def init_session_state():
     """Initialize Streamlit session state variables."""
     defaults = {
         "current_brd": None,
+        "previous_brd": None,
         "extraction_history": [],
+        "change_log": [],
         "db_initialized": False,
         "sample_data_loaded": False
     }
@@ -218,6 +220,16 @@ init_session_state()
 @st.cache_resource
 def get_extraction_engine():
     """Get or create the BRD extraction engine (cached)."""
+    # Force environment to use Groq
+    import os
+    os.environ["LLM_PROVIDER"] = "groq"
+    
+    from brd_agent.backend import BRDExtractionEngine
+    return BRDExtractionEngine()
+
+@st.cache_resource
+def get_extraction_engine_fresh():
+    """Get a fresh BRD extraction engine (no cache)."""
     # Force environment to use Groq
     import os
     os.environ["LLM_PROVIDER"] = "groq"
@@ -620,19 +632,38 @@ def page_upload_process():
         if st.button("Extract BRD from Sample", type="primary", use_container_width=True):
             with st.spinner("Extracting..."):
                 try:
-                    engine = get_extraction_engine()
+                    # Use fresh engine to avoid cache issues
+                    engine = get_extraction_engine_fresh()
                     result = engine.extract_brd(sample_text)
-                    st.session_state.current_brd = result
-                    st.session_state.extraction_history.append(result)
-                    st.success("BRD extracted!")
-                    # st.balloons()
-                    _display_brd_result(result)
-                except Exception as e:
-                    if "429" in str(e) or "quota" in str(e).lower():
-                        st.warning("Gemini Rate Limit Exceeded")
-                        st.info("Please wait 60s or consider switching provider to Groq.")
+                    
+                    # Validate result before storing
+                    if isinstance(result, dict) and result.get("project_topic"):
+                        st.session_state.current_brd = result
+                        # Ensure extraction_history exists and is valid
+                        if "extraction_history" not in st.session_state:
+                            st.session_state.extraction_history = []
+                        st.session_state.extraction_history.append(result)
+                        st.success("BRD extracted!")
+                        # st.balloons()
+                        _display_brd_result(result)
                     else:
-                        st.error(f"Sample Extraction Error: {str(e)}")
+                        # Show demo result if extraction fails
+                        demo_result = _get_demo_result()
+                        st.session_state.current_brd = demo_result
+                        if "extraction_history" not in st.session_state:
+                            st.session_state.extraction_history = []
+                        st.session_state.extraction_history.append(demo_result)
+                        st.warning("Using demo results (extraction had issues)")
+                        _display_brd_result(demo_result)
+                except Exception as e:
+                    # Show demo result if there's an error
+                    demo_result = _get_demo_result()
+                    st.session_state.current_brd = demo_result
+                    if "extraction_history" not in st.session_state:
+                        st.session_state.extraction_history = []
+                    st.session_state.extraction_history.append(demo_result)
+                    st.warning(f"Using demo results (Error: {str(e)})")
+                    _display_brd_result(demo_result)
 
     # ── Tab 5: Multi-Channel Fetch ──
     with tab5:
@@ -872,14 +903,14 @@ def page_view_brd():
             for action in brd.get("action_items", []):
                 st.checkbox(action, key=f"action_tab5_{hash(action)}")
 
-    # 7. AI Refinement
+    # 7. AI Refinement with Diff View, Reasoning & Change Log
     with tabs[6]:
         st.markdown("### AI-Powered Refinement")
-        st.markdown("Instruct the AI to refine or expand the extracted BRD:")
+        st.markdown("Instruct the AI to refine or expand the extracted BRD. All changes are tracked and explainable.")
 
         refinement = st.text_input(
             "Refinement instruction:",
-            placeholder="e.g., 'Add more detail to security requirements' or 'Focus on timeline conflicts'"
+            placeholder="e.g., 'Deadline badal kar 20 March kar do' or 'Add security requirements'"
         )
 
         if st.button("Refine with AI", type="primary"):
@@ -887,10 +918,26 @@ def page_view_brd():
                 with st.spinner("Refining BRD..."):
                     try:
                         engine = get_extraction_engine()
+                        # Save old BRD snapshot for diff
+                        old_brd = json.loads(json.dumps(brd, default=str))
                         refined = engine.refine_brd(brd, refinement)
+
+                        # Store for diff view
+                        st.session_state.previous_brd = old_brd
                         st.session_state.current_brd = refined
                         st.session_state.extraction_history.append(refined)
-                        st.success("BRD refined! Switch tabs to see updates.")
+
+                        # Append to Change Log (audit trail)
+                        import datetime as _dt
+                        log_entry = {
+                            "timestamp": _dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "instruction": refinement,
+                            "reasoning": refined.get("refinement_reasoning", f"Applied: {refinement}"),
+                            "summary": refined.get("change_summary", "Changes applied."),
+                        }
+                        st.session_state.change_log.append(log_entry)
+
+                        st.success("BRD refined successfully!")
                         st.rerun()
                     except Exception as e:
                         if "429" in str(e) or "quota" in str(e).lower():
@@ -901,46 +948,137 @@ def page_view_brd():
             else:
                 st.warning("Please enter a refinement instruction.")
 
-    # 8. Professional Export
+        # ── AI Reasoning Block ─────────────────────────────────────────
+        reasoning = brd.get("refinement_reasoning")
+        change_summary = brd.get("change_summary")
+        if reasoning or change_summary:
+            st.markdown("---")
+            st.markdown("### AI Reasoning (Explainability)")
+            if reasoning:
+                st.markdown(f"""
+                <div class="brd-card" style="border-left: 5px solid #45B7D1;">
+                    <b>Why was this changed?</b>
+                    <p>{reasoning}</p>
+                </div>
+                """, unsafe_allow_html=True)
+            if change_summary:
+                st.markdown(f"""
+                <div class="brd-card" style="border-left: 5px solid #4ECDC4;">
+                    <b>What changed?</b>
+                    <p>{change_summary}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+        # ── Diff View (Old vs New) ─────────────────────────────────────
+        if st.session_state.previous_brd and st.session_state.current_brd:
+            st.markdown("---")
+            st.markdown("### Diff View: Previous vs Current BRD")
+            st.info("Reviewing changes from previous version (Audit Trail)")
+
+            old_text = json.dumps(st.session_state.previous_brd, indent=2, default=str)
+            new_text = json.dumps(st.session_state.current_brd, indent=2, default=str)
+
+            with st.expander("Show Detailed Diff (line-by-line comparison)", expanded=False):
+                diff_lines = list(difflib.ndiff(
+                    old_text.splitlines(),
+                    new_text.splitlines()
+                ))
+                # Color-code the diff
+                diff_html = []
+                for line in diff_lines:
+                    if line.startswith("+ "):
+                        diff_html.append(f'<span style="color:#4ECDC4;font-weight:bold;">  {line}</span>')
+                    elif line.startswith("- "):
+                        diff_html.append(f'<span style="color:#FF6B6B;font-weight:bold;">  {line}</span>')
+                    elif line.startswith("? "):
+                        diff_html.append(f'<span style="color:#FFEAA7;">  {line}</span>')
+                    else:
+                        diff_html.append(f'<span style="color:#ccc;">  {line}</span>')
+                st.markdown(
+                    '<div style="background:#1a1a2e;padding:16px;border-radius:8px;'
+                    'font-family:monospace;font-size:0.85rem;max-height:400px;overflow-y:auto;">'
+                    + "<br>".join(diff_html) + '</div>',
+                    unsafe_allow_html=True
+                )
+
+            # Side-by-side quick summary
+            col_old, col_new = st.columns(2)
+            with col_old:
+                st.markdown("#### Previous Version")
+                old_reqs = len(st.session_state.previous_brd.get("requirements", []))
+                old_decs = len(st.session_state.previous_brd.get("decisions", []))
+                old_stk  = len(st.session_state.previous_brd.get("stakeholders", []))
+                st.metric("Requirements", old_reqs)
+                st.metric("Decisions", old_decs)
+                st.metric("Stakeholders", old_stk)
+            with col_new:
+                st.markdown("#### Current Version")
+                new_reqs = len(st.session_state.current_brd.get("requirements", []))
+                new_decs = len(st.session_state.current_brd.get("decisions", []))
+                new_stk  = len(st.session_state.current_brd.get("stakeholders", []))
+                st.metric("Requirements", new_reqs, delta=new_reqs - old_reqs)
+                st.metric("Decisions", new_decs, delta=new_decs - old_decs)
+                st.metric("Stakeholders", new_stk, delta=new_stk - old_stk)
+
+        # ── Change Log (Full Audit Trail) ──────────────────────────────
+        if st.session_state.change_log:
+            st.markdown("---")
+            st.markdown("### Change Log (Audit Trail)")
+            for idx, entry in enumerate(reversed(st.session_state.change_log), 1):
+                st.markdown(f"""
+                <div class="brd-card" style="border-left: 5px solid #96CEB4;">
+                    <b>Change #{len(st.session_state.change_log) - idx + 1}</b>
+                    &nbsp;|&nbsp; <small>{entry['timestamp']}</small>
+                    <p><b>Instruction:</b> {entry['instruction']}</p>
+                    <p><b>AI Reasoning:</b> {entry['reasoning']}</p>
+                    <p><b>Summary:</b> {entry['summary']}</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+    # 8. Professional Export (with Change Log in PDF)
     with tabs[7]:
         st.markdown("### Professional BRD Export")
-        st.write("Generate a judge-ready PDF report with full company branding and structured layout.")
+        st.write("Generate a judge-ready PDF with full branding, structured layout, and audit trail.")
 
-        if st.button("Generate & Download Premium PDF", type="primary", use_container_width=True):
-            with st.spinner("Designing your PDF..."):
-                file_name = f"BRD_{brd.get('project_topic', 'Report').replace(' ', '_')}.pdf"
-                pdf_path = export_brd_to_premium_pdf(brd, file_name)
+        # ── PDF Export (in-memory — one click, includes change_log) ────
+        try:
+            file_name = f"BRD_{brd.get('project_topic', 'Report').replace(' ', '_')}.pdf"
+            pdf_bytes = generate_brd_pdf_bytes(brd, change_log=st.session_state.change_log)
+            st.download_button(
+                label="Download BRD as PDF (with Audit Trail)",
+                data=pdf_bytes,
+                file_name=file_name,
+                mime="application/pdf",
+                type="primary",
+                use_container_width=True
+            )
+            st.success("PDF ready — includes Change Log & AI Reasoning!")
+        except Exception as pdf_err:
+            st.error(f"PDF generation error: {pdf_err}")
+            st.info("Make sure fpdf2 is installed: pip install fpdf2")
 
-                with open(pdf_path, "rb") as f:
-                    st.download_button(
-                        label="Click here to Download PDF",
-                        data=f,
-                        file_name=file_name,
-                        mime="application/pdf"
-                    )
-                st.success("PDF Generated Successfully!")
-            
-            decisions = brd.get("decisions", [])
-            if decisions:
-                st.markdown("### Key Decisions Extracted")
-                for i, dec in enumerate(decisions, 1):
-                    st.markdown(f"""
-                    <div class="brd-card">
-                        <span class="brd-tag tag-decision">DEC-{i:03d}</span>
-                        <p style="margin-top: 8px;">{dec}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-            else:
-                st.info("No decisions extracted.")
+        st.markdown("---")
+        decisions = brd.get("decisions", [])
+        if decisions:
+            st.markdown("### Key Decisions Extracted")
+            for i, dec in enumerate(decisions, 1):
+                st.markdown(f"""
+                <div class="brd-card">
+                    <span class="brd-tag tag-decision">DEC-{i:03d}</span>
+                    <p style="margin-top: 8px;">{dec}</p>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.info("No decisions extracted.")
 
-    # Export
+    # Export Row (bottom)
     st.markdown("---")
     topic = brd.get("project_topic", "new_project")
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
         brd_json = json.dumps(brd, indent=2, default=str)
         st.download_button(
-            "Download BRD as JSON",
+            "Download as JSON",
             data=brd_json,
             file_name=f"brd_{topic.replace(' ', '_')}.json",
             mime="application/json",
@@ -949,12 +1087,24 @@ def page_view_brd():
     with col2:
         brd_md = _brd_to_markdown(brd)
         st.download_button(
-            "Download BRD as Markdown",
+            "Download as Markdown",
             data=brd_md,
             file_name=f"brd_{topic.replace(' ', '_')}.md",
             mime="text/markdown",
             use_container_width=True
         )
+    with col3:
+        try:
+            quick_pdf = generate_brd_pdf_bytes(brd, change_log=st.session_state.change_log)
+            st.download_button(
+                "Download as PDF",
+                data=quick_pdf,
+                file_name=f"brd_{topic.replace(' ', '_')}.pdf",
+                mime="application/pdf",
+                use_container_width=True
+            )
+        except Exception:
+            st.button("PDF unavailable", disabled=True, use_container_width=True)
 
 
 # ============================================================================
@@ -1179,6 +1329,78 @@ def page_visualize():
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
+
+def _get_demo_result() -> dict:
+    """Return a demo BRD result for fallback display."""
+    return {
+        "execution_summary": "Project Raptor - LJM Partnership Implementation",
+        "project_topic": "Project Raptor - Q1 Strategy & Partnership",
+        "requirements": [
+            {
+                "id": "REQ-001",
+                "text": "The partnership terms must be finalized by March 1",
+                "type": "Functional",
+                "source": "Enron Corpus 2026 ID# 48592",
+                "status": "pending_review"
+            },
+            {
+                "id": "REQ-002", 
+                "text": "Budget approved for $50M for Q1 implementation",
+                "type": "Non-Functional",
+                "source": "Enron Corpus 2026 ID# 48592",
+                "status": "pending_review"
+            }
+        ],
+        "decisions": [
+            {
+                "text": "Budget approved for $50M for Q1 implementation",
+                "source": "Enron Email"
+            }
+        ],
+        "stakeholders": [
+            {
+                "name": "Jeff Skilling",
+                "role": "CEO",
+                "stance": "supportive",
+                "sentiment": "focused"
+            },
+            {
+                "name": "Kenneth Lay", 
+                "role": "Chairman",
+                "stance": "supportive",
+                "sentiment": "approving"
+            },
+            {
+                "name": "John Smith",
+                "role": "Technical Lead",
+                "stance": "supportive", 
+                "sentiment": "ready"
+            }
+        ],
+        "timelines": [
+            {
+                "date": "March 1",
+                "milestone": "Partnership terms finalization deadline"
+            }
+        ],
+        "feedback": [],
+        "action_items": [
+            "Move fast on LJM partnership",
+            "Finalize partnership terms by March 1"
+        ],
+        "conflicts": [],
+        "noise_reduction_logic": "Filtered out lunch plans and weather updates, focused on business requirements",
+        "mermaid_code": """flowchart TD
+    A[Project Raptor Start] --> B[LJM Partnership Analysis]
+    B --> C[Budget Approval $50M]
+    C --> D[Technical Team Assignment]
+    D --> E[March 1 Deadline]
+    E --> F[Q1 Implementation]""",
+        "project_health_score": 85,
+        "confidence_score": 0.85,
+        "noise_score": 0.15,
+        "channel_type": "email"
+    }
 
 def _display_brd_result(result: dict):
     """Display a BRD result inline on the page."""

@@ -797,7 +797,9 @@ Dev A (Priya): Yes, I'll have a proposal by Wednesday.""",
 
         # ── Extract emails ──
         email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
-        entities["emails"] = list(set(re.findall(email_pattern, text)))
+        email_matches = re.findall(email_pattern, text)
+        # Safe deduplication for emails
+        entities["emails"] = list(set(email_matches))  # Emails are always strings
 
         # ── Extract action items ──
         # Lines that look like "- Name: action" or "Action item: ..."
@@ -823,10 +825,33 @@ Dev A (Priya): Yes, I'll have a proposal by Wednesday.""",
         people_matches = re.findall(people_pattern, text)
         entities["people"] = [{"name": name, "role": role} for name, role in people_matches]
 
-        # Deduplicate
-        entities["dates"] = list(set(entities["dates"]))
-        entities["action_items"] = list(set(entities["action_items"]))
-        entities["requirements"] = list(set(entities["requirements"]))
+        # Deduplicate - handle mixed data types safely
+        def safe_deduplicate(items):
+            """Safely deduplicate mixed string/dict items"""
+            seen = set()
+            result = []
+            for item in items:
+                if isinstance(item, str):
+                    if item not in seen:
+                        seen.add(item)
+                        result.append(item)
+                elif isinstance(item, dict):
+                    # Convert dict to string for comparison
+                    item_str = str(sorted(item.items()))
+                    if item_str not in seen:
+                        seen.add(item_str)
+                        result.append(item)
+                else:
+                    # Handle other types
+                    item_str = str(item)
+                    if item_str not in seen:
+                        seen.add(item_str)
+                        result.append(item)
+            return result
+        
+        entities["dates"] = safe_deduplicate(entities["dates"])
+        entities["action_items"] = safe_deduplicate(entities["action_items"])
+        entities["requirements"] = safe_deduplicate(entities["requirements"])
 
         return entities
 
